@@ -4,16 +4,17 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <string.h>
+#include <time.h>
 // DIR library
 #include <dirent.h>
 
 #include <fcntl.h>
 
 #include <assert.h>
-#define SIZE  75
+#define SIZE 75
 
 bool create_dir(char *path, int mode) {
-	//strcat(path,"/BACKUP");
+
 	if (mkdir(path, mode) != 0 && errno == EEXIST)
 		return false;
 	else
@@ -59,14 +60,27 @@ int main(int argc, char *argv[]) {
 	if ((dip = opendir(argv[1])) == NULL )
 		return errno;
 
+
 	char* currFile;
 	char* backupFile;
+
+
+	char *backupInfoFile;
+	backupInfoFile = malloc(FILENAME_MAX);
+
+	char *info;
+	info = malloc(FILENAME_MAX);
+
+	char *infoTemp;
+	infoTemp = malloc(FILENAME_MAX);
 
 	currFile = malloc(FILENAME_MAX);
 	backupFile = malloc(FILENAME_MAX);
 
+
 	char *backup_dir;
 	backup_dir = malloc(FILENAME_MAX);
+
 	strcat(backup_dir, argv[2]);
 	strcat(backup_dir, "/~BACKUP");
 	create_dir(backup_dir, 0755);
@@ -97,12 +111,87 @@ int main(int argc, char *argv[]) {
 			copy_file(currFile, backupFile);
 		}
 
+
+
 		memset(currFile, '\0', SIZE);
 		memset(backupFile, '\0', SIZE);
 	}
 
-	while (1) {
 
+	char* backupIncremental;
+	backupIncremental = malloc(FILENAME_MAX);
+
+	sleep(dt);
+
+
+	// INCRMENTAL BACKUP
+	while(1){
+
+		time_t t = time(0);
+		struct tm lt = *localtime(&t);
+
+		sprintf(backupIncremental, "%s/~BACKUP/%d_%d_%d_%d_%d_%d", argv[2], lt.tm_year + 1900,lt.tm_mon + 1,lt.tm_mday,
+				lt.tm_hour,lt.tm_min,lt.tm_sec);
+
+		create_dir(backupIncremental, 0755);
+
+		strcat(backupInfoFile, backupIncremental);
+		strcat(backupInfoFile, "/__bckpinfo__");
+
+		int backupInfo_fd = open(backupInfoFile, O_WRONLY | O_CREAT, 0755);
+		assert(backupInfo_fd >= 0);
+
+
+		printf( "Incremental folder : %s \n",backupIncremental );
+
+		dip = opendir(argv[1]);
+		while ((dit = readdir(dip)) != NULL ) {
+
+			if (strcmp(dit->d_name, ".") == 0 || strcmp(dit->d_name, "..") == 0)
+				continue;
+
+			// create path to current file
+
+			strcat(currFile, argv[1]);
+			strcat(currFile, "/");
+			strcat(currFile, dit->d_name);
+
+			strcat(backupFile, backupIncremental);
+			strcat(backupFile, "/");
+			strcat(backupFile, dit->d_name);
+
+
+
+
+			if (stat(currFile, &statbuf) == -1) {
+				perror("stat");
+				return errno;
+			}
+
+			if (S_ISREG(statbuf.st_mode) == true) {
+				printf("Part 2, FICHEIRO: dit->d_name = %s\n", dit->d_name);
+				printf("Part 2, MODIFICADO EM: statbuf.st_mtime = %d\n", statbuf.st_mtime);
+				copy_file(currFile, backupFile);
+				struct tm *infoTime = localtime(&statbuf.st_mtime);
+				sprintf(info, "%s %d %d %d %d %d %d\n",dit->d_name, lt.tm_year + 1900,lt.tm_mon + 1,lt.tm_mday,
+						lt.tm_hour,lt.tm_min,lt.tm_sec);
+			}
+
+			strcat(infoTemp, info);
+
+
+			memset(currFile, '\0', SIZE);
+			memset(backupFile, '\0', SIZE);
+		}
+
+		write(backupInfo_fd, infoTemp , strlen(infoTemp));
+
+
+		memset(infoTemp, '\0', SIZE);
+		memset(backupIncremental, '\0', SIZE);
+		memset(backupInfoFile, '\0', SIZE);
+
+		sleep(dt);
 	}
 
 	return 0;

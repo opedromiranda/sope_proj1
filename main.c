@@ -221,12 +221,6 @@ int main(int argc, char *argv[]) {
 	// INCRMENTAL BACKUP
 	while (1) {
 
-		/*
-		while (fila != NULL ) {
-			delete(&fila);
-		}
-		load_backup_info("~BACKUP/__bckpinfo__", &fila);
-		*/
 
 		time_t t = time(0);
 		struct tm lt = *localtime(&t);
@@ -237,11 +231,11 @@ int main(int argc, char *argv[]) {
 
 		create_dir(backupIncremental, 0755);
 
-		//strcat(backupInfoFile, backupIncremental);
-		//strcat(backupInfoFile, "/__bckpinfo__");
+		strcat(backupInfoFile, backupIncremental);
+		strcat(backupInfoFile, "/__bckpinfo__");
 
-		//int backupInfo_fd = open(backupInfoFile, O_WRONLY | O_CREAT, 0755);
-		//assert(backupInfo_fd >= 0);
+		int backupInfo_fd = open(backupInfoFile, O_WRONLY | O_CREAT, 0755);
+		assert(backupInfo_fd >= 0);
 
 		printf("Incremental folder : %s \n", backupIncremental);
 
@@ -288,10 +282,10 @@ int main(int argc, char *argv[]) {
 							statbuf.st_mtime);
 					copy_file(currFile, backupFile);
 					struct tm *infoTime = localtime(&statbuf.st_mtime);
-					/*sprintf(info, "%s %d %d %d %d %d %d\n", dit->d_name,
+					sprintf(info, "%s %d %d %d %d %d %d\n", dit->d_name,
 					 lt.tm_year + 1900, lt.tm_mon + 1, lt.tm_mday,
 					 lt.tm_hour, lt.tm_min, lt.tm_sec);
-					 */
+					 
 				}
 
 			}
@@ -303,7 +297,7 @@ int main(int argc, char *argv[]) {
 		}
 		save_backup_info(BACKUP_FOLDER, fila);
 
-		//write(backupInfo_fd, infoTemp, strlen(infoTemp));
+		write(backupInfo_fd, infoTemp, strlen(infoTemp));
 
 		memset(infoTemp, '\0', SIZE);
 		memset(backupIncremental, '\0', SIZE);

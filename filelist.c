@@ -44,8 +44,11 @@ void listar(FILA fila) {
 }
 
 void save_to_file(FILA fila, FILE* fich){
-	if(fila == NULL)
+	if(fila == NULL){
+		fclose(fich);
 		return;
+	}
+
 	fprintf(fich,"%s\n%d\n",fila->name, fila->timestamp);
 	save_to_file(fila->next, fich);
 }

@@ -63,7 +63,8 @@ int load_backup_info(char *backup_folder, FILA* fila) {
 	/**
 	 * each file backed up has 2 lines in BACKUP_INFO, name and timestamp.
 	 * while reading the file, we are either reading it's name or timestamp per line.
-	 */bool is_reading_filename = true;
+	 */
+	bool is_reading_filename = true;
 
 	int pos = 0;
 	while ((ch = fgetc(fbackup)) != EOF) {
@@ -313,4 +314,3 @@ int main(int argc, char *argv[]) {
 
 	return 0;
 }
-

@@ -17,7 +17,7 @@
 
 #define SIZE 75
 
-#define BACKUP_INFO   "__bckpinfo__"
+#define BACKUP_INFO "__bckpinfo__"
 #define BACKUP_FOLDER "~BACKUP"
 
 bool create_dir(char *path, int mode) {
@@ -102,6 +102,7 @@ void save_backup_info(char *backup_folder, FILA fila) {
 	strcat(backup_file, backup_folder);
 	strcat(backup_file, "/");
 	strcat(backup_file, BACKUP_INFO);
+	printf("backup File: %s", backup_file);
 
 	fbackup = fopen(backup_file, "w+");
 
@@ -113,23 +114,23 @@ int main(int argc, char *argv[]) {
 	inic(&fila);
 
 	/*
-	 inserir(&fila, "fich1" , 125);
-	 inserir(&fila, "fich2" , 123);
-	 inserir(&fila, "fich3" , 123);
+inserir(&fila, "fich1" , 125);
+inserir(&fila, "fich2" , 123);
+inserir(&fila, "fich3" , 123);
 
-	 save_backup_info("~BACKUP",fila);
-	 exit(1);
+save_backup_info("~BACKUP",fila);
+exit(1);
 	 */
 	/*FICHEIRO* fich1;
-	 //fich1 = get_file_with_name(&fila,"fichx");
-	 if(fich1 != NULL)
-	 printf("timestamp de fich1: %d\n" , (fich1)->timestamp);
-	 //fich1->name = "TROLOLO";
+//fich1 = get_file_with_name(&fila,"fichx");
+if(fich1 != NULL)
+printf("timestamp de fich1: %d\n" , (fich1)->timestamp);
+//fich1->name = "TROLOLO";
 
-	 fich1 = NULL;
-	 //fich1 = get_file_with_name(&fila,"fich1");
-	 //if(fich1 != NULL)
-	 //printf("timestamp de fich1: %d\n" , (fich1)->timestamp);
+fich1 = NULL;
+//fich1 = get_file_with_name(&fila,"fich1");
+//if(fich1 != NULL)
+//printf("timestamp de fich1: %d\n" , (fich1)->timestamp);
 	 */
 
 	//load_backup_info(".", &fila);
@@ -216,20 +217,57 @@ int main(int argc, char *argv[]) {
 	char* backupIncremental;
 	backupIncremental = malloc(FILENAME_MAX);
 
+	char *folderBack;
+	folderBack = malloc(FILENAME_MAX);
+	memset(folderBack, '\0', SIZE);
+
+
 	sleep(dt);
+
+
+	bool alterado = false;
+	sprintf(folderBack, "root");
+
+	char *temp;
+	temp = malloc(FILENAME_MAX);
+
+
+	strcat(temp, backup_dir);
+	strcat(temp, "/");
+	strcat(temp, "bckpfolders");
+
+	int bckInfoFile = open(temp, O_WRONLY | O_CREAT, 0755);
+	assert(bckInfoFile >= 0);
+
+
+
 
 	// INCRMENTAL BACKUP
 	while (1) {
+
+		printf("\n\nPasta anterior: %s \n\n",folderBack);
+		sprintf(infoTemp, "%s\n", folderBack);
+
 
 
 		time_t t = time(0);
 		struct tm lt = *localtime(&t);
 
 		sprintf(backupIncremental, "%s/~BACKUP/%d_%d_%d_%d_%d_%d", argv[2],
-		 lt.tm_year + 1900, lt.tm_mon + 1, lt.tm_mday, lt.tm_hour,
-		 lt.tm_min, lt.tm_sec);
+				lt.tm_year + 1900, lt.tm_mon + 1, lt.tm_mday, lt.tm_hour,
+				lt.tm_min, lt.tm_sec);
 
 		create_dir(backupIncremental, 0755);
+
+		memset(folderBack, '\0', SIZE);
+
+
+		sprintf(folderBack, "%d_%d_%d_%d_%d_%d",
+						lt.tm_year + 1900, lt.tm_mon + 1, lt.tm_mday, lt.tm_hour,
+						lt.tm_min, lt.tm_sec);
+
+
+		printf("\n\nPasta anterior: %s \n\n",folderBack);
 
 		strcat(backupInfoFile, backupIncremental);
 		strcat(backupInfoFile, "/__bckpinfo__");
@@ -267,6 +305,7 @@ int main(int argc, char *argv[]) {
 				if (fich1 != NULL ) {
 					if (fich1->timestamp < statbuf.st_mtime) {
 						makeNewBackup = true;
+						alterado = true;
 						fich1->timestamp = statbuf.st_mtime;
 					} else
 						makeNewBackup = false;
@@ -283,18 +322,30 @@ int main(int argc, char *argv[]) {
 					copy_file(currFile, backupFile);
 					struct tm *infoTime = localtime(&statbuf.st_mtime);
 					sprintf(info, "%s %d %d %d %d %d %d\n", dit->d_name,
-					 lt.tm_year + 1900, lt.tm_mon + 1, lt.tm_mday,
-					 lt.tm_hour, lt.tm_min, lt.tm_sec);
-					 
+							lt.tm_year + 1900, lt.tm_mon + 1, lt.tm_mday,
+							lt.tm_hour, lt.tm_min, lt.tm_sec);
+
 				}
 
 			}
 
+
 			strcat(infoTemp, info);
+
 
 			memset(currFile, '\0', SIZE);
 			memset(backupFile, '\0', SIZE);
 		}
+
+		char *bckInfoFileChar;
+		bckInfoFileChar = malloc(FILENAME_MAX);
+
+		if(alterado){
+			sprintf(bckInfoFileChar, "%s\n", folderBack);
+			write(bckInfoFile, bckInfoFileChar , strlen(bckInfoFileChar));
+		}
+
+		memset(bckInfoFileChar, '\0', SIZE);
 		save_backup_info(BACKUP_FOLDER, fila);
 
 		write(backupInfo_fd, infoTemp, strlen(infoTemp));
